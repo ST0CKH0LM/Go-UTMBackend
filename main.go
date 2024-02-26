@@ -84,6 +84,5 @@ func CreateTable() (c *gin.Context) {
 func index(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", gin.H{
 		"title": "test",
-		"image": "uploads/Ch.jpg",
 	})
 }
