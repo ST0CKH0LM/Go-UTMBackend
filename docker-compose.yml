@@ -1,0 +1,41 @@
+version: "3.8"
+networks:
+  main:
+    driver: bridge
+services:
+  go-db-starter:
+    image: golang:alpine
+    container_name: go-db-starter
+    depends_on:
+      - db
+    volumes:
+      - .:/go/src/go-db-starter
+    working_dir: /go/src/go-db-starter
+    expose:
+      - 8080
+    command: sh -c "go run *.go"
+    environment:
+      - DB_PASS=1234test
+      - DB_USER=test
+      - DB_URL=db:3306
+      - DB_NAME=test
+    ports:
+      - 8080:8080
+    networks:
+      - main
+
+  db:
+    image: mariadb
+    container_name: db_test
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=utm
+      - MYSQL_USER=test
+      - MYSQL_PASSWORD=1234test
+    volumes:
+      - ./database:/var/lib/mysql
+    ports:
+      - 3308:3306
+    networks:
+      - main
