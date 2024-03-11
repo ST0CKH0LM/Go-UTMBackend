@@ -60,11 +60,16 @@ func main() {
 	r.GET("/", index)
 	r.GET("/ping", testPing)
 	r.GET("/user", getAllUser)
-	r.GET("/user/:user_id", getUserById)
-	r.GET("/register", InsertUser)
+	r.GET("/user/:id", getUserById)
+	r.POST("/register", InsertUser)
+	r.POST("/products/insert", InsertProduct)
 	r.GET("/products", getAllProducts)
+	r.GET("/products/test/:page", OffsetProducts)
+	r.GET("/:product_type", getAllProductsCategory)
 	r.GET("/products/:product_id", getProductsDetail)
-	r.POST("/uploads", UploadsIMG)
+	r.POST("/login", UserLogin)
+	r.POST("/products/:id/uploads", UploadsIMG)
+	r.POST("/user/:id/img", addProfileImage)
 	r.StaticFS("/uploads", http.Dir("public/uploads"))
 	r.Run()
 }
@@ -84,5 +89,6 @@ func CreateTable() (c *gin.Context) {
 func index(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", gin.H{
 		"title": "test",
+		"image": "uploads/Ch.jpg",
 	})
 }

@@ -2,6 +2,9 @@ package main
 
 import (
 	"errors"
+	"log"
+	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,12 +14,13 @@ import (
 
 type Persons struct {
 	// gorm.Model
-	User_ID     int    `gorm:"primaryKey;AUTO_INCREMENT"`
+	ID          int    `gorm:"primaryKey;AUTO_INCREMENT"`
 	Name        string `gorm:"not null"`
 	SName       string
 	Username    string `gorm:"not null"`
 	Password    string `gorm:"not null"`
-	Email       string
+	Email       string `gorm:"not null"`
+	Phone       string `gorm:"not null"`
 	DateOfBirth string
 	Gender      string
 	Thumbnail   string
@@ -36,7 +40,7 @@ func getAllUser(c *gin.Context) {
 
 func getUserById(c *gin.Context) {
 	db, _ := connectToMariaDB()
-	id := c.Param("user_id")
+	id := c.Param("id")
 	var Person []Persons
 	err := db.First(&Person, id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -52,29 +56,73 @@ func getUserById(c *gin.Context) {
 
 func InsertUser(c *gin.Context) {
 	db, _ := connectToMariaDB()
-	SecretPass := "testPassword"
-	hash, _ := HashPassword(SecretPass)
-	newUser := Persons{
-		Name:        "testName",
-		SName:       "testSName",
-		Username:    "testUsername",
-		Password:    hash,
-		Email:       "testEmail@gmail.com",
-		DateOfBirth: "2000/02/08",
-		Gender:      "Male",
+	var Person Persons
+	c.BindJSON(&Person)
+	hashpassword, err := bcrypt.GenerateFromPassword([]byte(Person.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
 	}
-	db.Create(&newUser)
+	Person.Password = string(hashpassword)
+	var checkUser Persons
+	var checkEmail Persons
+	db.First(&checkUser, "username = ?", Person.Username)
+	db.First(&checkEmail, "email = ?", Person.Email)
+	log.Println(checkUser.Username)
+	log.Println(checkUser.Email)
+	if checkUser.Username == Person.Username || checkEmail.Email == Person.Email {
+		c.JSON(400, gin.H{
+			"Message": "Username Already in Use",
+		})
+	} else {
+		db.Create(&Person)
+		c.JSON(200, gin.H{
+			"Message": "User has been Created",
+		})
+	}
+}
+
+func UserLogin(c *gin.Context) {
+	db, _ := connectToMariaDB()
+	var Person Persons
+	c.BindJSON(&Person)
+	var checkUser Persons
+	db.First(&checkUser, "username = ?", Person.Username)
+	checkHash := bcrypt.CompareHashAndPassword([]byte(checkUser.Password), []byte(Person.Password))
+	if checkUser.Username == Person.Username && checkHash == nil {
+		c.JSON(200, gin.H{
+			"Message": "Login Success, Welcome " + Person.Username,
+		})
+	} else {
+		c.JSON(400, gin.H{
+			"Message": "Login Failed",
+		})
+	}
+}
+
+func addProfileImage(c *gin.Context) {
+	db, _ := connectToMariaDB()
+	id := c.Param("id")
+	file, _ := c.FormFile("file")
+	var Person Persons
+	db.First(&Person, "id = ?", id)
+	log.Println(Person.Thumbnail)
+	if Person.Thumbnail != "/profileimg/"+file.Filename {
+		rem, err := os.Stat("public" + Person.Thumbnail)
+		log.Println(rem)
+		if err == nil {
+			os.Chmod("public/profileimg", 0777)
+			err = os.Remove("pubilc" + Person.Thumbnail)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}
+	c.SaveUploadedFile(file, "public/profileimg/"+file.Filename)
+	imgPath := "/profileimg/" + file.Filename
+	Person.Thumbnail = imgPath
+	db.Save(&Person)
 	c.JSON(200, gin.H{
-		"data": "User Create",
+		"Message": "Upload Complete",
 	})
-}
-
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
-}
-
-func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
 }
