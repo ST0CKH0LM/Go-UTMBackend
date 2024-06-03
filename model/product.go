@@ -1,6 +1,9 @@
 package model
 
 import (
+	"time"
+
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -16,13 +19,13 @@ type (
 		Product_desc    string         `json:"product_desc"`
 		Product_count   int            `gorm:"not null" json:"product_count"`
 		Product_sale    int            `json:"product_sale"`
-		Product_gallery string         `json:"product_gallery"`
+		Product_gallery datatypes.JSON `json:"product_gallery"`
 		Product_rate    int            `json:"rate"`
 		Product_spac    string         `json:"product_spac"`
 		Fav             bool           `json:"fav"`
 		Merchant        string         `json:"merchant"`
-		CreatedAt       JSONTime       `gorm:"column:created_at" json:"created_at"`
-		UpdatedAt       JSONTime       `gorm:"column:updated_at" json:"updated_at"`
+		CreatedAt       time.Time      `gorm:"column:created_at" json:"created_at"`
+		UpdatedAt       time.Time      `gorm:"column:updated_at" json:"updated_at"`
 		DeletedAt       gorm.DeletedAt `json:"deleted_at"`
 	}
 

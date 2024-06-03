@@ -3,7 +3,6 @@ package repositories
 import (
 	"log"
 	"math"
-	"time"
 
 	"gitlab.com/Std217/test/model"
 	"gitlab.com/Std217/test/serializers"
@@ -82,22 +81,30 @@ func (repo *ProductRepository) GetTotalPage() (float64, error) {
 	return set, nil
 }
 
-func (repo *ProductRepository) InsertProduct(Product *model.Products) error {
-	if err := repo.DB.Create(Product).Error; err != nil {
+func (repo *ProductRepository) InsertProduct(product *model.Products) error {
+	if err := repo.DB.Create(&product).Error; err != nil {
 		log.Println(err)
 		return err
 	}
 	return nil
 }
 
-func (repo *ProductRepository) UploadsIMG(id string, fileName string, Product *model.Products) error {
-	if err := repo.DB.First(&Product, "id = ?", id).Error; err != nil {
-		return err
-	}
-	Product.Product_gallery = fileName
-	Product.UpdatedAt = model.JSONTime(time.Now())
-	if err := repo.DB.Save(&Product).Error; err != nil {
-		return err
-	}
-	return nil
+// func (repo *ProductRepository) UploadsIMG(id string, fileName string, Product *model.Products) error {
+// 	if err := repo.DB.First(&Product, "id = ?", id).Error; err != nil {
+// 		return err
+// 	}
+// 	Product.Product_gallery = fileName
+// 	Product.UpdatedAt = model.JSONTime(time.Now())
+// 	if err := repo.DB.Save(&Product).Error; err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
+
+func (repo *ProductRepository) FindProductByID(id string, product *model.Products) error {
+	return repo.DB.First(product, id).Error
+}
+
+func (repo *ProductRepository) UpdateProduct(product *model.Products) error {
+	return repo.DB.Save(product).Error
 }

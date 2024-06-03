@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"encoding/json"
 	"log"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -136,19 +138,59 @@ func (handler *ProductHandler) InsertProduct(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "Product has been Created"})
 }
 
-func (handler *ProductHandler) UploadsIMG(c *gin.Context) {
-	var product model.Products
+// func (handler *ProductHandler) UploadsIMG(c *gin.Context) { // ใช้สำหรับอัพโหลดภาพ Profile อย่าลืมเปลี่ยน DB
+// 	var product model.Products
+// 	id := c.Param("id")
+// 	file, err := c.FormFile("file")
+// 	if err != nil {
+// 		c.JSON(500, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	c.SaveUploadedFile(file, "public/uploads/"+file.Filename)
+// 	filepath := "/uploads/" + file.Filename
+// 	if err := handler.productUsecase.UploadsIMG(id, filepath, &product); err != nil {
+// 		c.JSON(500, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	c.JSON(200, gin.H{"message": "Upload Complete"})
+// }
+
+func (handler *ProductHandler) MultiUploads(c *gin.Context) {
 	id := c.Param("id")
-	file, err := c.FormFile("file")
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	files := form.File["file"]
+	var Urls []string
+
+	for _, file := range files {
+		filename := filepath.Base(file.Filename)
+		if err := c.SaveUploadedFile(file, "public/uploads/"+filename); err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		Urls = append(Urls, "/public/uploads/"+filename)
+	}
+	var product model.Products
+	if err := handler.productUsecase.FindProductByID(id, &product); err != nil {
+		c.JSON(404, gin.H{"error": err.Error()})
+	}
+
+	imgJSON, err := json.Marshal(Urls)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.SaveUploadedFile(file, "public/uploads/"+file.Filename)
-	filepath := "/uploads/" + file.Filename
-	if err := handler.productUsecase.UploadsIMG(id, filepath, &product); err != nil {
+	product.Product_gallery = imgJSON
+
+	if err := handler.productUsecase.UpdateProduct(&product); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(200, gin.H{"message": "Upload Complete"})
+	c.JSON(200, gin.H{
+		"data":    "Product " + id + " Upload Complete",
+		"message": Urls,
+	})
 }

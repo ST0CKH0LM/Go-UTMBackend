@@ -62,9 +62,17 @@ func (uc *ProductUsecase) InsertProduct(product *model.Products) error {
 	return nil
 }
 
-func (uc *ProductUsecase) UploadsIMG(id string, filepath string, product *model.Products) error {
-	if err := uc.productRepo.UploadsIMG(id, filepath, product); err != nil {
-		return err
-	}
-	return nil
+// func (uc *ProductUsecase) UploadsIMG(id string, filepath string, product *model.Products) error {
+// 	if err := uc.productRepo.UploadsIMG(id, filepath, product); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
+
+func (uc *ProductUsecase) FindProductByID(id string, product *model.Products) error {
+	return uc.productRepo.FindProductByID(id, product)
+}
+
+func (uc *ProductUsecase) UpdateProduct(product *model.Products) error {
+	return uc.productRepo.UpdateProduct(product)
 }

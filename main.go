@@ -34,6 +34,7 @@ func main() {
 		productRepo := repositories.NewProductRepository(database)
 		productUsecase := usecase.NewProductUsecase(*productRepo)
 		productHandler := handler.NewProductHandler(*productUsecase)
+
 		productAPI.GET("/search", productHandler.SearchProduct)
 		productAPI.GET("/products", productHandler.GetAllProducts)
 		productAPI.GET("/producttype", productHandler.GetAllProductsCategory)
@@ -41,8 +42,16 @@ func main() {
 		productAPI.GET("/products/:id", productHandler.GetProductsDetail)
 		productAPI.GET("/offsetproduct", productHandler.GetOffSetProducts)
 		// productAPI.GET("/testCatagory", SelectCatagory)
-		productAPI.POST("/products/:id/uploads", productHandler.UploadsIMG)
 		productAPI.POST("/products/insert", productHandler.InsertProduct)
+		productAPI.POST("/products/:id/galleryUpload", productHandler.MultiUploads)
+	}
+	userAPI := r.Group("")
+	{
+		usersRepo := repositories.NewUsersRepository(database)
+		usersUsecase := usecase.NewUsersUsecase(*usersRepo)
+		usersHandler := handler.NewUsersHandler(*usersUsecase)
+
+		userAPI.GET("/user", usersHandler.GetAllUser)
 	}
 	port := os.Getenv("PORT")
 	if port == "" {
